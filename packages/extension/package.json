@@ -1,0 +1,767 @@
+{
+  "name": "reliefpilot",
+  "displayName": "Relief Pilot",
+  "description": "A VSCode extension for missing capabilities required by AI agents and enabling advanced control.",
+  "publisher": "ivan-mezentsev",
+  "version": "0.1.0",
+  "type": "commonjs",
+  "icon": "icon.png",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "VSCode",
+    "Terminal",
+    "tools",
+    "reliefpilot",
+    "ask_report",
+    "ai_fetch_url",
+    "Human In The Loop",
+    "Language Model Tools"
+  ],
+  "files": [
+    "dist/**",
+    "media/**",
+    "icon.png",
+    "icon_mono.png",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "engines": {
+    "vscode": ">=1.100.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivan-mezentsev/reliefpilot.git"
+  },
+  "homepage": "https://github.com/ivan-mezentsev/reliefpilot",
+  "bugs": {
+    "url": "https://github.com/ivan-mezentsev/reliefpilot/issues"
+  },
+  "author": "Ivan Mezentsev (https://github.com/ivan-mezentsev)",
+  "license": "MIT",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "icons": {
+      "reliefpilot-logo": {
+        "description": "ReliefPilot status bar icon",
+        "default": {
+          "fontPath": "media/reliefpilot.woff",
+          "fontCharacter": "\\E800"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "reliefpilot.createSpecsMode",
+        "title": "Relief Pilot: Create Specs Mode",
+        "category": "Relief Pilot"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "reliefpilot.confirmNonDestructiveCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, even commands marked as non-destructive (destructiveFlag=false) will require user confirmation."
+        },
+        "reliefpilot.AiFetchUrlModel": {
+          "type": "string",
+          "default": "oswe-vscode-prime",
+          "description": "Chat model id to use for the ai_fetch_url tool."
+        },
+        "reliefpilot.AiFetchUrlPrompt": {
+          "type": "string",
+          "default": "# System Prompt\n\n# Identity\nYou are an agent-to-agent assistant for data extraction after fetching documents.\n# Capabilities\n- Extraction of content from data on a given topic automatically to save the context window of the higher-level AI agent\n- Preservation of the original meaning and formatting of the text\n# Rules\n\n## General rules\n- It is EXTREMELY important that the text you process retains the original phrasing as much as possible - without adding comments, notes - do not add anything from yourself to the output/do not comment.\n- It is necessary to precisely preserve the visual formatting: indents, line breaks, etc., but it is necessary to get rid of possible artifacts from previous html2text conversion such as unnecessary line breaks or html tags (if they are not part of the topic) and/or other useless formatting elements that only clutter the context window.\n## Conversion and extraction rules\n- It is necessary to replace absolutely all characters in the processed text that cannot be entered simply from the keyboard with their analogues. Example:\n\t- Replace the typographic `'` with a regular single quote `'`\n\t- Replace the typographic `-` with `-`\n- It is necessary to process all characters in the text, including invisible ones\n- Be sure to pay attention to the provided source document URL: `__AI_FETCH_URL_PROCESSED_URL__` - this should give you more understanding of the context of the topic\n- It is EXTREMELY important to extract only the data from the content that very accurately corresponds to the requested topic `__AI_FETCH_URL_PROCESSED_TOPIC__`\n- If the data presents a comparison of the topic with alternatives, it is also important to extract data on the alternative topics in order not to lose the essence of the comparison itself.",
+          "editPresentation": "multilineText",
+          "description": "System prompt used by the ai_fetch_url tool to extract topic-specific content."
+        },
+        "reliefpilot.askReportHistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of last ask_report entries to keep in memory for the current VS Code session."
+        },
+        "reliefpilot.askReportTimeoutSeconds": {
+          "type": "number",
+          "default": 600,
+          "minimum": 0,
+          "maximum": 360000,
+          "description": "Timeout in seconds for the ask-report webview. When > 0, the dialog shows a countdown and auto-cancels on expiration."
+        }
+      }
+    },
+    "languageModelTools": [
+      {
+        "name": "ask_report",
+        "displayName": "Ask user or report",
+        "modelDescription": "Open a webview to ask for a user report/confirmation and return the decision.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "ask_report",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "topicName": {
+              "type": "string",
+              "description": "Short name of the request subject like a title"
+            },
+            "message": {
+              "type": "string",
+              "description": "The specific question/report for the user. Supports Markdown formatting."
+            },
+            "predefinedOptions": {
+              "type": "array",
+              "description": "Predefined options for the user to choose from (optional)",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "topicName",
+            "message"
+          ]
+        }
+      },
+      {
+        "name": "code_checker",
+        "displayName": "Check workspace diagnostics",
+        "modelDescription": "Retrieve diagnostics from VSCode's language services for the active workspace. Use this tool after making changes to any code in the filesystem to ensure no new errors were introduced, or when requested by the user.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "code_checker",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "severityLevel": {
+              "type": "string",
+              "enum": [
+                "Error",
+                "Warning",
+                "Information",
+                "Hint"
+              ],
+              "description": "Minimum severity level: 'Error', 'Warning', 'Information', or 'Hint' (default: 'Warning')."
+            }
+          }
+        }
+      },
+      {
+        "name": "focus_editor",
+        "displayName": "Focus editor",
+        "modelDescription": "Open the specified file in the VSCode editor and navigate to a specific line and column.\nUse this tool to bring a file into focus and position the editor's cursor where desired.\nNote: This tool operates on the editor visual environment so that the user can see the file. It does not return the file contents in the tool call result.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "focus_editor",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "filePath": {
+              "type": "string",
+              "description": "The absolute path to the file to focus in the editor."
+            },
+            "line": {
+              "type": "number",
+              "description": "The line number to navigate to (default: 0)."
+            },
+            "column": {
+              "type": "number",
+              "description": "The column position to navigate to (default: 0)."
+            },
+            "startLine": {
+              "type": "number",
+              "description": "The starting line number for highlighting."
+            },
+            "startColumn": {
+              "type": "number",
+              "description": "The starting column number for highlighting."
+            },
+            "endLine": {
+              "type": "number",
+              "description": "The ending line number for highlighting."
+            },
+            "endColumn": {
+              "type": "number",
+              "description": "The ending column number for highlighting."
+            }
+          },
+          "required": [
+            "filePath"
+          ]
+        }
+      },
+      {
+        "name": "execute_command",
+        "displayName": "Execute command in terminal",
+        "modelDescription": "Execute a command in a VSCode integrated terminal with proper shell integration.\nThis tool provides detailed output and exit status information, and supports:\n- Custom working directory\n- Shell integration for reliable output capture\n- Output compression for large outputs\n- Detailed exit status reporting\n- Flag for potentially destructive commands (destructiveFlag: false to skip confirmation for read-only commands)\n\nWhen running commands that might prompt for user input, include appropriate flags like '-y' or '--yes'\nto prevent interactive prompts from blocking execution.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "execute_command",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute"
+            },
+            "customCwd": {
+              "type": "string",
+              "description": "Optional custom working directory for command execution"
+            },
+            "destructiveFlag": {
+              "type": "boolean",
+              "description": "Flag indicating if the command is potentially destructive or modifying. Default is true."
+            },
+            "background": {
+              "type": "boolean",
+              "description": "Run command without waiting for completion. Default is false."
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Timeout in milliseconds for reporting purposes. Default is 300000 (5 minutes)."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      },
+      {
+        "name": "get_terminal_output",
+        "displayName": "Get terminal output",
+        "modelDescription": "Retrieve the output from a specific terminal by its ID (default: \"1\").\nThis tool allows you to check the current or historical output of a terminal,\nwhich is particularly useful when working with long-running commands or\ncommands started in background mode with the execute_command tool.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "get_terminal_output",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "terminalId": {
+              "type": "string",
+              "description": "The ID of the terminal to get output from (provide as a string, e.g., \"1\")."
+            },
+            "maxLines": {
+              "type": "number",
+              "description": "Maximum number of lines to retrieve (default: 1000)"
+            }
+          },
+          "required": [
+            "terminalId"
+          ]
+        }
+      },
+      {
+        "name": "ai_fetch_url",
+        "displayName": "AI-based fetch URL content",
+        "modelDescription": "Fetch textual content from a provided URL and return it to the agent.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "ai_fetch_url",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to fetch. Supports fragment anchors for HTML cropping (e.g. https://example.com/page#section-id). For pdf or geo-restricted pages, you can prefix with https://r.jina.ai/ to fetch a rendered snapshot of the target URL, for example: \"https://r.jina.ai/http://example.com/index.html\" (fragment anchors are not supported)."
+            },
+            "topic": {
+              "type": "string",
+              "description": "Describe in plain language the topic or key points the sub-agent must carefully filter for to conserve Your the context window."
+            }
+          },
+          "required": [
+            "url",
+            "topic"
+          ]
+        }
+      },
+      {
+        "name": "context7_resolve-library-id",
+        "displayName": "Context7: Resolve Library ID",
+        "modelDescription": "Resolves a package/product name to a Context7-compatible library ID and returns a list of matching libraries. Call before 'context7_get-library-docs' unless user explicitly provides an ID.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "context7_resolve-library-id",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "libraryName": {
+              "type": "string",
+              "description": "Library name to search for and retrieve a Context7-compatible library ID."
+            }
+          },
+          "required": ["libraryName"]
+        }
+      },
+      {
+        "name": "context7_get-library-docs",
+        "displayName": "Context7: Get Library Docs",
+        "modelDescription": "Fetches up-to-date documentation for a library given a Context7-compatible library ID (obtained via 'context7_resolve-library-id' or directly provided by user).",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "context7_get-library-docs",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "context7CompatibleLibraryID": {
+              "type": "string",
+              "description": "Exact Context7-compatible library ID (e.g., '/mongodb/docs', '/vercel/next.js', '/supabase/supabase', '/vercel/next.js/v14.3.0-canary.87')."
+            },
+            "topic": {
+              "type": "string",
+              "description": "Topic to focus documentation on (e.g., 'hooks', 'routing')."
+            },
+            "tokens": {
+              "type": "number",
+              "description": "Maximum number of tokens of documentation to retrieve (default: 6000). Higher values provide more context but consume more tokens."
+            }
+          },
+          "required": ["context7CompatibleLibraryID"]
+        }
+      },
+      {
+        "name": "github_search_repositories",
+        "displayName": "GitHub: Search repositories",
+        "modelDescription": "Search repositories via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_search_repositories",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query string (e.g., 'language:TypeScript stars:>1000')."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (max 100)."
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "github_get_file_contents",
+        "displayName": "GitHub: Get file contents",
+        "modelDescription": "Retrieve the contents of a file from a GitHub repository.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_get_file_contents",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "path": {
+              "type": "string",
+              "description": "Path to the file within the repository."
+            },
+            "ref": {
+              "type": "string",
+              "description": "The name of the commit/branch/tag."
+            }
+          },
+          "required": ["owner", "repo", "path"]
+        }
+      },
+      {
+        "name": "github_list_pull_requests",
+        "displayName": "GitHub: List pull requests",
+        "modelDescription": "List pull requests for a repository via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_list_pull_requests",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "state": {
+              "type": "string",
+              "description": "Filter by state (open, closed, all)."
+            },
+            "head": {
+              "type": "string",
+              "description": "Filter by head user/org and branch."
+            },
+            "base": {
+              "type": "string",
+              "description": "Filter by base branch."
+            },
+            "sort": {
+              "type": "string",
+              "description": "Sort by (created, updated, popularity, long-running)."
+            },
+            "direction": {
+              "type": "string",
+              "description": "Sort direction (asc, desc)."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (max 100)."
+            },
+            "page": {
+              "type": "number",
+              "description": "Page number (1-based)."
+            }
+          },
+          "required": ["owner", "repo"]
+        }
+      },
+      {
+        "name": "github_pull_request_read",
+        "displayName": "GitHub: Read pull request",
+        "modelDescription": "Read a pull request details or related data via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_pull_request_read",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "method": {
+              "type": "string",
+              "description": "Action to retrieve PR data: get | get_diff | get_status | get_files | get_review_comments | get_reviews | get_comments"
+            },
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "pull_number": {
+              "type": "number",
+              "description": "Pull request number."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (for list endpoints, max 100)."
+            },
+            "page": {
+              "type": "number",
+              "description": "Page number (1-based)."
+            }
+          },
+          "required": ["method", "owner", "repo", "pull_number"]
+        }
+      },
+      {
+        "name": "github_search_code",
+        "displayName": "GitHub: Search code",
+        "modelDescription": "Search code via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_search_code",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search code query string (e.g., 'repo:owner/name path:/src language:TypeScript')."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (max 100)."
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "github_list_releases",
+        "displayName": "GitHub: List releases",
+        "modelDescription": "List releases for a repository via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_list_releases",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (max 100)."
+            }
+          },
+          "required": ["owner", "repo"]
+        }
+      },
+      {
+        "name": "github_get_latest_release",
+        "displayName": "GitHub: Get latest release",
+        "modelDescription": "Retrieve latest release info for a repository via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_get_latest_release",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            }
+          },
+          "required": ["owner", "repo"]
+        }
+      },
+      {
+        "name": "github_search_issues",
+        "displayName": "GitHub: Search issues",
+        "modelDescription": "Search issues via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_search_issues",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search issues query string (e.g., 'repo:owner/name bug label:bug')."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (max 100)."
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "github_list_issues",
+        "displayName": "GitHub: List issues",
+        "modelDescription": "List issues for a repository via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_list_issues",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "per_page": {
+              "type": "number",
+              "description": "Number of items per page (max 100)."
+            }
+          },
+          "required": ["owner", "repo"]
+        }
+      },
+      {
+        "name": "github_issue_read",
+        "displayName": "GitHub: Read issue",
+        "modelDescription": "Read a single issue from a GitHub repository via GitHub API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_issue_read",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "issue_number": {
+              "type": "number",
+              "description": "Issue number."
+            }
+          },
+          "required": ["owner", "repo", "issue_number"]
+        }
+      },
+      {
+        "name": "google_search",
+        "displayName": "Google: Search web",
+        "modelDescription": "Search Google and return relevant results from the web. This tool finds web pages, articles, and information on specific topics using Google's search engine. Results include titles, snippets, and URLs that can be analyzed further.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "google_search",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query - be specific and use quotes for exact matches. For best results, use clear keywords and avoid very long queries."
+            },
+            "num_results": {
+              "type": "integer",
+              "description": "Number of results to return (default: 5, max: 10). Increase for broader coverage, decrease for faster response.",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 10
+            },
+            "site": {
+              "type": "string",
+              "description": "Limit search results to a specific website domain (e.g., 'wikipedia.org' or 'nytimes.com')."
+            },
+            "language": {
+              "type": "string",
+              "description": "Filter results by language using ISO 639-1 codes (e.g., 'en' for English, 'es' for Spanish, 'fr' for French)."
+            },
+            "dateRestrict": {
+              "type": "string",
+              "description": "Filter results by date using Google's date restriction format: 'd[number]' for past days, 'w[number]' for past weeks, 'm[number]' for past months, or 'y[number]' for past years. Example: 'm6' for results from the past 6 months."
+            },
+            "exactTerms": {
+              "type": "string",
+              "description": "Search for results that contain this exact phrase. This is equivalent to putting the terms in quotes in the search query."
+            },
+            "resultType": {
+              "type": "string",
+              "description": "Specify the type of results to return. Options include 'image' (or 'images'), 'news', and 'video' (or 'videos'). Default is general web results."
+            },
+            "page": {
+              "type": "integer",
+              "description": "Page number for paginated results (starts at 1). Use in combination with resultsPerPage to navigate through large result sets.",
+              "default": 1,
+              "minimum": 1
+            },
+            "resultsPerPage": {
+              "type": "integer",
+              "description": "Number of results to show per page (default: 5, max: 10). Controls how many results are returned for each page.",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 10
+            },
+            "sort": {
+              "type": "string",
+              "description": "Sorting method for search results. Options: 'relevance' (default) or 'date' (most recent first)."
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "duckduckgo_search",
+        "displayName": "DuckDuckGo: Search web",
+        "modelDescription": "Search the web using DuckDuckGo and return relevant results (titles, snippets, URLs).",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "duckduckgo_search",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "The search query"
+            },
+            "page": {
+              "type": "integer",
+              "description": "Page number (starts at 1)",
+              "default": 1,
+              "minimum": 1
+            },
+            "numResults": {
+              "type": "integer",
+              "description": "Number of results to return (default: 10, max: 20)",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "required": ["query"]
+        }
+      },
+      {
+        "name": "felo_search",
+        "displayName": "Felo AI: Technical web search",
+        "modelDescription": "Search the web for up-to-date technical information like latest releases, security advisories, migration guides, benchmarks, and community insights.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "felo_search",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "The search query or prompt"
+            }
+          },
+          "required": ["query"]
+        }
+      }
+    ]
+  },
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "pnpm package",
+    "prepackage-extension": "pnpm run generate:icon",
+    "package-extension": "cross-env npm_config_user_agent=pnpm vsce package --no-dependencies",
+    "generate:icon": "node scripts/generate_icon.js",
+    "compile": "pnpm check-types && node build.js",
+    "check-types": "tsc --noEmit",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node build.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "compile-tests": "node build.js --test",
+    "pretest": "pnpm compile-tests",
+    "test": "vscode-test",
+    "package": "pnpm check-types && node build.js --production"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^27.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.19.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.6.2",
+    "cross-env": "^10.1.0",
+    "sharp": "^0.34.4",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@nanocollective/get-md": "^1.0.1",
+    "esbuild": "^0.25.12",
+    "highlight.js": "^11.10.0",
+    "isbinaryfile": "^5.0.6",
+    "marked": "16.4.1",
+    "mermaid": "^11.11.0",
+    "p-wait-for": "^6.0.0",
+    "zod": "^4.1.12",
+    "parse5": "^8.0.0",
+    "gpt-tokenizer": "^3.4.0"
+  },
+  "packageManager": "pnpm@10.6.1+sha512.40ee09af407fa9fbb5fbfb8e1cb40fbb74c0af0c3e10e9224d7b53c7658528615b2c92450e74cfad91e3a2dcafe3ce4050d80bda71d757756d2ce2b66213e9a3"
+}

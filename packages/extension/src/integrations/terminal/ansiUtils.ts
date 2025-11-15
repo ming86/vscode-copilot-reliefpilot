@@ -1,0 +1,26 @@
+/*
+	Portions of this file are derived from Cline (https://github.com/cline/cline)
+	v3.8.4, file: src/integrations/terminal/ansiUtils.ts
+
+	Original Work License: Apache License, Version 2.0
+	You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+	Modifications for Relief Pilot (VS Code extension) by Ivan Mezentsev, 2025.
+
+	SPDX-License-Identifier: Apache-2.0
+*/
+
+export function ansiRegex({ onlyFirst = false } = {}) {
+	// Valid string terminator sequences are BEL, ESC\, and 0x9c
+	const ST = "(?:\\u0007|\\u001B\\u005C|\\u009C)"
+	const pattern = [
+		`[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?${ST})`,
+		"(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+	].join("|")
+
+	return new RegExp(pattern, onlyFirst ? undefined : "g")
+}
+
+export function stripAnsi(string: string): string {
+	return string.replace(ansiRegex(), "")
+}
