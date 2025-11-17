@@ -58,7 +58,12 @@
     "commands": [
       {
         "command": "reliefpilot.createSpecsMode",
-        "title": "Relief Pilot: Create Specs Mode",
+        "title": "Relief Pilot: Create `Specs Mode`",
+        "category": "Relief Pilot"
+      },
+      {
+        "command": "reliefpilot.askReport.showHistory",
+        "title": "Relief Pilot: Show `Ask Report` History",
         "category": "Relief Pilot"
       }
     ],
