@@ -22,16 +22,22 @@ import { GithubSearchIssuesTool } from './tools/github_search_issues';
 import { GithubSearchRepositoriesTool } from './tools/github_search_repositories';
 import { GoogleSearchTool } from './tools/google_search';
 import { openAiFetchProgressPanelByUid } from './utils/ai_fetch_progress';
+import { initAiFetchSessionStorage, registerAiFetchSessionConfigWatcher } from './utils/ai_fetch_sessions';
 import { askReportHistory, formatTimestampSeconds, initAskReportHistoryStorage, registerAskReportHistoryConfigWatcher } from './utils/ask_report_history';
 import { hasContext7Token, initContext7Auth, setupOrUpdateContext7Token } from './utils/context7_auth';
 import { openContext7ContentPanelByUid } from './utils/context7_content_panel';
+import { initContext7SessionStorage, registerContext7SessionConfigWatcher } from './utils/context7_content_sessions';
 import { openDuckDuckGoContentPanelByUid } from './utils/duckduckgo_search_content_panel';
+import { initDuckDuckGoSessionStorage, registerDuckDuckGoSessionConfigWatcher } from './utils/duckduckgo_search_content_sessions';
 import { env, initEnv } from './utils/env';
 import { openFeloContentPanelByUid } from './utils/felo_search_content_panel';
+import { initFeloSessionStorage, registerFeloSessionConfigWatcher } from './utils/felo_search_content_sessions';
 import { hasGitHubToken, initGitHubAuth, setupOrUpdateGitHubToken } from './utils/github_auth';
 import { openGithubContentPanelByUid } from './utils/github_content_panel';
+import { initGithubSessionStorage, registerGithubSessionConfigWatcher } from './utils/github_content_sessions';
 import { hasGoogleApiKey, hasGoogleSearchEngineId, initGoogleAuth, setupOrUpdateGoogleApiKey, setupOrUpdateGoogleSearchEngineId } from './utils/google_search_auth';
 import { openGoogleContentPanelByUid } from './utils/google_search_content_panel';
+import { initGoogleSessionStorage, registerGoogleSessionConfigWatcher } from './utils/google_search_content_sessions';
 import { statusBarActivity } from './utils/statusBar';
 
 const STATUS_MENU_COMMAND = 'reliefpilot.status.menu';
@@ -270,6 +276,20 @@ export const activate = async (context: vscode.ExtensionContext) => {
   initGoogleAuth(context);
   // Initialize ask_report history storage (load from workspace storage)
   initAskReportHistoryStorage(context);
+  // Initialize session storage
+  initAiFetchSessionStorage(context);
+  initContext7SessionStorage(context);
+  initDuckDuckGoSessionStorage(context);
+  initFeloSessionStorage(context);
+  initGithubSessionStorage(context);
+  initGoogleSessionStorage(context);
+  // Watchers for dynamic limit application on configuration change
+  registerAiFetchSessionConfigWatcher(context);
+  registerContext7SessionConfigWatcher(context);
+  registerDuckDuckGoSessionConfigWatcher(context);
+  registerFeloSessionConfigWatcher(context);
+  registerGithubSessionConfigWatcher(context);
+  registerGoogleSessionConfigWatcher(context);
 
   if (vscode.lm) {
     try {

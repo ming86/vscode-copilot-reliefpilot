@@ -1,17 +1,17 @@
 import * as vscode from 'vscode'
+import { getDuckDuckGoContentSession } from './duckduckgo_search_content_sessions'
 import { env } from './env'
-import { getGoogleContentSession } from './google_search_content_sessions'
 
 export async function openDuckDuckGoContentPanelByUid(uid: string): Promise<void> {
-    let session = getGoogleContentSession(uid)
+    let session = getDuckDuckGoContentSession(uid)
     if (!session) {
         const deadline = Date.now() + 30000
         while (!session && Date.now() < deadline) {
             await new Promise(r => setTimeout(r, 150))
-            session = getGoogleContentSession(uid)
+            session = getDuckDuckGoContentSession(uid)
         }
         if (!session) {
-            vscode.window.showErrorMessage('No active DuckDuckGo content session found for this link.')
+            // vscode.window.showErrorMessage('No active DuckDuckGo content session found for this link.')
             return
         }
     }

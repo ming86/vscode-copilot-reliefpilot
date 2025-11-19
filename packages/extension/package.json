@@ -93,6 +93,48 @@
           "maximum": 1000,
           "description": "Maximum number of last ask_report entries to keep in memory for the current VS Code session."
         },
+        "reliefpilot.aiFetchHistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of ai_fetch_url session history entries to keep."
+        },
+        "reliefpilot.context7HistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of context7 session history entries to keep."
+        },
+        "reliefpilot.feloHistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of felo_search session history entries to keep."
+        },
+        "reliefpilot.githubHistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of github session history entries to keep."
+        },
+        "reliefpilot.googleHistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of google session history entries to keep."
+        },
+        "reliefpilot.duckduckgoHistoryMaxEntries": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of duckduckgo session history entries to keep."
+        },
         "reliefpilot.askReportTimeoutSeconds": {
           "type": "number",
           "default": 600,
