@@ -8,7 +8,7 @@ import type {
 } from 'vscode'
 import * as vscode from 'vscode'
 import { env } from '../utils/env'
-import { createFeloContentSession } from '../utils/felo_search_content_sessions'
+import { createFeloContentSession, finalizeFeloSession } from '../utils/felo_search_content_sessions'
 import { statusBarActivity } from '../utils/statusBar'
 
 export interface FeloSearchInput {
@@ -165,6 +165,7 @@ export class FeloSearchTool implements LanguageModelTool<FeloSearchInput> {
             try { session.contentEmitter.fire(session.contentBuffer) } catch { }
             throw err instanceof Error ? err : new Error(message)
         } finally {
+            finalizeFeloSession(uid)
             statusBarActivity.end('felo_search')
         }
     }

@@ -9,7 +9,7 @@ import type {
 import * as vscode from 'vscode'
 import { env } from '../utils/env'
 import { fetchGitHub } from '../utils/github_auth'
-import { createGithubContentSession } from '../utils/github_content_sessions'
+import { createGithubContentSession, finalizeGithubSession } from '../utils/github_content_sessions'
 import { statusBarActivity } from '../utils/statusBar'
 
 export interface GithubSearchIssuesInput {
@@ -128,6 +128,7 @@ export class GithubSearchIssuesTool implements LanguageModelTool<GithubSearchIss
             const session = createGithubContentSession(uid, 'github_search_issues')
             session.contentBuffer = body
             try { session.contentEmitter.fire(session.contentBuffer) } catch { /* ignore */ }
+            finalizeGithubSession(uid)
             return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(body)])
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err)

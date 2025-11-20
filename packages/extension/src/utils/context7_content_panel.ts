@@ -13,7 +13,7 @@ export async function openContext7ContentPanelByUid(uid: string): Promise<void> 
       session = getContext7ContentSession(uid)
     }
     if (!session) {
-      vscode.window.showErrorMessage('No active Context7 content session found for this link.')
+      // vscode.window.showErrorMessage('No active Context7 content session found for this link.')
       return
     }
   }

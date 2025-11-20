@@ -8,7 +8,7 @@ import type {
 } from 'vscode'
 import * as vscode from 'vscode'
 import { fetchContext7 } from '../utils/context7_auth'
-import { createContext7ContentSession } from '../utils/context7_content_sessions'
+import { createContext7ContentSession, finalizeContext7Session } from '../utils/context7_content_sessions'
 import { env } from '../utils/env'
 import { statusBarActivity } from '../utils/statusBar'
 
@@ -79,6 +79,7 @@ export class Context7GetLibraryDocsTool implements LanguageModelTool<Context7Get
             const session = createContext7ContentSession(uid, 'context7_get-library-docs')
             session.contentBuffer = docs
             try { session.contentEmitter.fire(session.contentBuffer) } catch { /* ignore */ }
+            finalizeContext7Session(uid)
             return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(docs)])
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err)

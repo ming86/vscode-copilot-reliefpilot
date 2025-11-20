@@ -9,7 +9,7 @@ import type {
 import * as vscode from 'vscode'
 import { env } from '../utils/env'
 import { getGoogleApiKey, getGoogleSearchEngineId } from '../utils/google_search_auth'
-import { createGoogleContentSession } from '../utils/google_search_content_sessions'
+import { createGoogleContentSession, finalizeGoogleSession } from '../utils/google_search_content_sessions'
 import { statusBarActivity } from '../utils/statusBar'
 import { validateGoogleTokensFromResponse } from '../utils/validate_google_tokens'
 
@@ -245,6 +245,7 @@ export class GoogleSearchTool implements LanguageModelTool<GoogleSearchInput> {
             try { session.contentEmitter.fire(session.contentBuffer) } catch { }
             throw err instanceof Error ? err : new Error(message)
         } finally {
+            finalizeGoogleSession(uid)
             statusBarActivity.end('google_search')
         }
     }

@@ -1,34 +1,34 @@
-// Shared session registry for GitHub tools (search-repositories, get-file-contents)
+// Shared session registry for DuckDuckGo tools (duckduckgo_search)
 // Each session stores final markdown content for a single tool invocation and allows
 // a webview panel to render it on demand via a command link.
 import * as vscode from 'vscode'
 
-export interface GithubContentSession {
+export interface DuckDuckGoContentSession {
     uid: string
-    tool: string // tool identifier (e.g. github_search_repositories)
+    tool: string // tool identifier (e.g. duckduckgo_search)
     contentEmitter: vscode.EventEmitter<string>
     contentBuffer: string
     panel?: vscode.WebviewPanel
     dispose: () => void
 }
 
-type StoredGithubContentSession = {
+type StoredDuckDuckGoContentSession = {
     uid: string
     tool: string
     contentBuffer: string
 }
 
-const STORAGE_KEY = 'reliefpilot.githubSessions'
+const STORAGE_KEY = 'reliefpilot.duckduckgoSessions'
 
 function getMaxEntries(): number {
     const cfg = vscode.workspace.getConfiguration('reliefpilot')
-    const n = cfg.get<number>('githubHistoryMaxEntries', 20)
+    const n = cfg.get<number>('duckduckgoHistoryMaxEntries', 20)
     if (!Number.isFinite(n) || n <= 0) return 20
     return Math.max(1, Math.floor(n))
 }
 
-class GithubSessionManager {
-    private sessions: GithubContentSession[] = []
+class DuckDuckGoSessionManager {
+    private sessions: DuckDuckGoContentSession[] = []
     private storage?: vscode.Memento
 
     initStorage(memento: vscode.Memento) {
@@ -38,7 +38,7 @@ class GithubSessionManager {
 
     private loadFromStorage() {
         if (!this.storage) return
-        const data = this.storage.get<StoredGithubContentSession[]>(STORAGE_KEY, []) || []
+        const data = this.storage.get<StoredDuckDuckGoContentSession[]>(STORAGE_KEY, []) || []
         if (Array.isArray(data)) {
             this.sessions = data.map(s => {
                 const contentEmitter = new vscode.EventEmitter<string>()
@@ -59,7 +59,7 @@ class GithubSessionManager {
         }
     }
 
-    private serialize(): StoredGithubContentSession[] {
+    private serialize(): StoredDuckDuckGoContentSession[] {
         return this.sessions.map(s => ({
             uid: s.uid,
             tool: s.tool,
@@ -72,9 +72,9 @@ class GithubSessionManager {
         try { await this.storage.update(STORAGE_KEY, this.serialize()) } catch { }
     }
 
-    createSession(uid: string, tool: string): GithubContentSession {
+    createSession(uid: string, tool: string): DuckDuckGoContentSession {
         const contentEmitter = new vscode.EventEmitter<string>()
-        const session: GithubContentSession = {
+        const session: DuckDuckGoContentSession = {
             uid,
             tool,
             contentEmitter,
@@ -98,7 +98,7 @@ class GithubSessionManager {
         return session
     }
 
-    getSession(uid: string | undefined): GithubContentSession | undefined {
+    getSession(uid: string | undefined): DuckDuckGoContentSession | undefined {
         if (!uid) return undefined
         return this.sessions.find(s => s.uid === uid)
     }
@@ -121,28 +121,28 @@ class GithubSessionManager {
     }
 }
 
-const manager = new GithubSessionManager()
+const manager = new DuckDuckGoSessionManager()
 
-export function initGithubSessionStorage(context: vscode.ExtensionContext) {
+export function initDuckDuckGoSessionStorage(context: vscode.ExtensionContext) {
     manager.initStorage(context.workspaceState)
 }
 
-export function createGithubContentSession(uid: string, tool: string): GithubContentSession {
+export function createDuckDuckGoContentSession(uid: string, tool: string): DuckDuckGoContentSession {
     return manager.createSession(uid, tool)
 }
 
-export function getGithubContentSession(uid: string | undefined): GithubContentSession | undefined {
+export function getDuckDuckGoContentSession(uid: string | undefined): DuckDuckGoContentSession | undefined {
     return manager.getSession(uid)
 }
 
-export function finalizeGithubSession(uid: string) {
+export function finalizeDuckDuckGoSession(uid: string) {
     manager.finalizeSession(uid)
 }
 
-export function registerGithubSessionConfigWatcher(context: vscode.ExtensionContext) {
+export function registerDuckDuckGoSessionConfigWatcher(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('reliefpilot.githubHistoryMaxEntries')) {
+            if (e.affectsConfiguration('reliefpilot.duckduckgoHistoryMaxEntries')) {
                 manager.applyLimitFromSettings()
             }
         })

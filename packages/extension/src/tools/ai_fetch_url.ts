@@ -317,6 +317,7 @@ export class AiFetchUrlLanguageModelTool implements LanguageModelTool<AiFetchUrl
                     if (s) {
                         s.finishedAt = Date.now();
                         s.rightDoneEmitter.fire();
+                        mod.finalizeSession(sessionUid);
                     }
                 } catch { /* ignore */ }
             }

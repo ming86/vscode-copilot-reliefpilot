@@ -13,7 +13,7 @@ export async function openGithubContentPanelByUid(uid: string): Promise<void> {
       session = getGithubContentSession(uid)
     }
     if (!session) {
-      vscode.window.showErrorMessage('No active GitHub content session found for this link.')
+      // vscode.window.showErrorMessage('No active GitHub content session found for this link.')
       return
     }
   }

@@ -7,8 +7,8 @@ import type {
     PreparedToolInvocation,
 } from 'vscode'
 import * as vscode from 'vscode'
+import { createDuckDuckGoContentSession, finalizeDuckDuckGoSession } from '../utils/duckduckgo_search_content_sessions'
 import { env } from '../utils/env'
-import { createGoogleContentSession } from '../utils/google_search_content_sessions'
 import { statusBarActivity } from '../utils/statusBar'
 
 export interface DuckDuckGoSearchInput {
@@ -184,7 +184,7 @@ export class DuckDuckGoSearchTool implements LanguageModelTool<DuckDuckGoSearchI
     private _pendingUids: string[] = []
     async invoke(options: LanguageModelToolInvocationOptions<DuckDuckGoSearchInput>, token: CancellationToken): Promise<vscode.LanguageModelToolResult> {
         const uid = this._pendingUids.length > 0 ? this._pendingUids.shift()! : randomUUID()
-        const session = createGoogleContentSession(uid, 'duckduckgo_search')
+        const session = createDuckDuckGoContentSession(uid, 'duckduckgo_search')
         try {
             const input = options.input ?? ({} as DuckDuckGoSearchInput)
             const query = normalizeQuery(input.query)
@@ -202,7 +202,10 @@ export class DuckDuckGoSearchTool implements LanguageModelTool<DuckDuckGoSearchI
             session.contentBuffer = errorBody
             try { session.contentEmitter.fire(session.contentBuffer) } catch { }
             throw err instanceof Error ? err : new Error(message)
-        } finally { statusBarActivity.end('duckduckgo_search') }
+        } finally {
+            finalizeDuckDuckGoSession(uid)
+            statusBarActivity.end('duckduckgo_search')
+        }
     }
     prepareInvocation(options: LanguageModelToolInvocationPrepareOptions<DuckDuckGoSearchInput>): PreparedToolInvocation {
         statusBarActivity.start('duckduckgo_search')

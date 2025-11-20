@@ -9,7 +9,7 @@ import type {
 import * as vscode from 'vscode'
 import { env } from '../utils/env'
 import { fetchGitHub } from '../utils/github_auth'
-import { createGithubContentSession } from '../utils/github_content_sessions'
+import { createGithubContentSession, finalizeGithubSession } from '../utils/github_content_sessions'
 import { statusBarActivity } from '../utils/statusBar'
 
 export interface GithubPullRequestReadInput {
@@ -350,6 +350,7 @@ export class GithubPullRequestReadTool implements LanguageModelTool<GithubPullRe
                 new vscode.LanguageModelTextPart(errorBody),
             ])
         } finally {
+            finalizeGithubSession(uid)
             statusBarActivity.end('github')
         }
     }

@@ -37,6 +37,7 @@ export class ConfirmationUI {
         handled = true;
         const cmd = inputBox.value;
         inputBox.hide();
+        inputBox.dispose();
         resolve({ decision: 'Approve', command: cmd });
       };
       const deny = async () => {
@@ -62,6 +63,8 @@ export class ConfirmationUI {
           sent = true;
           const feedback = fb.value.trim();
           fb.hide();
+          fb.dispose(); // Dispose fb when feedback is sent
+          inputBox.dispose(); // Dispose inputBox when feedback is sent
           resolve({ decision: 'Deny', command: cmd, feedback: feedback || undefined });
         });
         fb.onDidTriggerButton((btn) => {
@@ -69,15 +72,23 @@ export class ConfirmationUI {
             sent = true;
             const feedback = fb.value.trim();
             fb.hide();
+            fb.dispose(); // Dispose fb when feedback is sent
+            inputBox.dispose(); // Dispose inputBox when feedback is sent
             resolve({ decision: 'Deny', command: cmd, feedback: feedback || undefined });
           } else if (btn === fbBackButton) {
             fb.hide();
+            fb.dispose(); // Dispose fb when going back
+            // 1. approve() -> dispose inputBox, resolve.
+            // 2. deny() -> hide inputBox (don't dispose yet). show fb.
+            // 3. fb completes (accept/button) -> dispose fb, dispose inputBox, resolve.
+            // 4. fb back -> hide fb, dispose fb, show inputBox.
           }
         });
         fb.onDidHide(() => {
           // ESC/close or Back button => return to command (unless feedback was sent)
           if (!sent) {
             handled = false; // allow main input to decide later
+            fb.dispose(); // Dispose fb when it hides
             inputBox.show();
           }
         });
@@ -148,6 +159,7 @@ export class ConfirmationUI {
       const approve = () => {
         handled = true;
         inputBox.hide();
+        inputBox.dispose();
         resolve('Approve');
       };
       const deny = async () => {
@@ -173,6 +185,8 @@ export class ConfirmationUI {
           sent = true;
           const feedback = fb.value.trim();
           fb.hide();
+          fb.dispose();
+          inputBox.dispose();
           resolve(feedback || 'Deny');
         });
         fb.onDidTriggerButton((btn) => {
@@ -180,15 +194,19 @@ export class ConfirmationUI {
             sent = true;
             const feedback = fb.value.trim();
             fb.hide();
+            fb.dispose();
+            inputBox.dispose();
             resolve(feedback || 'Deny');
           } else if (btn === fbBackButton) {
             fb.hide();
+            fb.dispose();
           }
         });
         fb.onDidHide(() => {
           // ESC/close or Back button => return to main input (unless feedback was sent)
           if (!sent) {
             handled = false;
+            fb.dispose();
             inputBox.show();
           }
         });

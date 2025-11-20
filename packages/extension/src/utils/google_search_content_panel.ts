@@ -13,7 +13,7 @@ export async function openGoogleContentPanelByUid(uid: string): Promise<void> {
       session = getGoogleContentSession(uid)
     }
     if (!session) {
-      vscode.window.showErrorMessage('No active Google content session found for this link.')
+      // vscode.window.showErrorMessage('No active Google content session found for this link.')
       return
     }
   }

@@ -13,7 +13,7 @@ export async function openAiFetchProgressPanelByUid(uid: string): Promise<void> 
       session = getSession(uid);
     }
     if (!session) {
-      vscode.window.showErrorMessage('No active ai_fetch_url session found for this link.');
+      // vscode.window.showErrorMessage('No active ai_fetch_url session found for this link.');
       return;
     }
   }

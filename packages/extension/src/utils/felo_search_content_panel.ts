@@ -12,7 +12,7 @@ export async function openFeloContentPanelByUid(uid: string): Promise<void> {
             session = getFeloContentSession(uid)
         }
         if (!session) {
-            vscode.window.showErrorMessage('No active Felo content session found for this link.')
+            // vscode.window.showErrorMessage('No active Felo content session found for this link.')
             return
         }
     }
