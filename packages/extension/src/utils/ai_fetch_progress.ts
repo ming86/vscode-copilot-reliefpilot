@@ -4,18 +4,11 @@ import { env } from '../utils/env';
 import { getSession } from './ai_fetch_sessions';
 
 export async function openAiFetchProgressPanelByUid(uid: string): Promise<void> {
-  let session = getSession(uid);
-  // Wait briefly for session to become available (user might click immediately after prepareInvocation)
+  // After early session creation in prepareInvocation(), either the session exists immediately
+  // or it was trimmed from history. No polling needed; return fast if missing.
+  const session = getSession(uid);
   if (!session) {
-    const deadline = Date.now() + 30000;
-    while (!session && Date.now() < deadline) {
-      await new Promise(r => setTimeout(r, 150));
-      session = getSession(uid);
-    }
-    if (!session) {
-      // vscode.window.showErrorMessage('No active ai_fetch_url session found for this link.');
-      return;
-    }
+    return;
   }
 
   // If a panel already exists for this session, just focus it instead of creating a duplicate
@@ -57,7 +50,7 @@ export async function openAiFetchProgressPanelByUid(uid: string): Promise<void> 
     `style-src ${panel.webview.cspSource} 'unsafe-inline'`,
     `script-src 'nonce-${nonce}'`,
   ].join('; ');
-  const fetchedTitle = `Fetched content (${session.modelId} ${session.modelMaxInputTokens})`;
+  const fetchedTitle = `Fetched content (${session.modelId} ${session.modelMaxInputTokens > 0 ? session.modelMaxInputTokens : '—'})`;
 
   panel.webview.html = `<!DOCTYPE html>
 <html lang="en">

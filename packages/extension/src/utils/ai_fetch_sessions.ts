@@ -8,6 +8,8 @@ export type AiFetchSession = {
     // Model metadata used for UI (e.g. progress panel header)
     modelId: string;
     modelMaxInputTokens: number;
+    // Lightweight lifecycle state for UI / debugging
+    status: 'pending' | 'running' | 'done';
     // Timing metadata for this session (wall-clock start of the tool invocation)
     startedAt: number;
     finishedAt?: number;
@@ -27,6 +29,7 @@ type StoredAiFetchSession = {
     topic: string;
     modelId: string;
     modelMaxInputTokens: number;
+    status: 'pending' | 'running' | 'done';
     startedAt: number;
     finishedAt?: number;
     leftBuffer: string;
@@ -61,6 +64,7 @@ class AiFetchSessionManager {
                 const rightDoneEmitter = new vscode.EventEmitter<void>();
                 return {
                     ...s,
+                    status: s.status ?? 'done', // Loaded sessions are already completed
                     leftEmitter,
                     rightTextEmitter,
                     rightDoneEmitter,
@@ -90,6 +94,7 @@ class AiFetchSessionManager {
             topic: s.topic,
             modelId: s.modelId,
             modelMaxInputTokens: s.modelMaxInputTokens,
+            status: s.status,
             startedAt: s.startedAt,
             finishedAt: s.finishedAt,
             leftBuffer: s.leftBuffer,
@@ -121,6 +126,7 @@ class AiFetchSessionManager {
             topic,
             modelId,
             modelMaxInputTokens,
+            status: 'pending',
             startedAt: Date.now(),
             leftEmitter,
             rightTextEmitter,
@@ -174,6 +180,7 @@ class AiFetchSessionManager {
             // If the tool hasn't finished writing, that's bad.
             // But finalizeSession is called when tool is DONE.
             // So it's safe to dispose.
+            session.status = 'done';
             session.dispose();
         }
     }
