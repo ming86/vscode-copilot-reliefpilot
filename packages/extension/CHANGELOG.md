@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 - 2025-11-24
+
+- refactor(ai_fetch_sessions): enhance session management and lifecycle states
+
 ## 0.2.0 - 2025-11-20
 
 - refactor(confirmation_ui): dispose input boxes after use

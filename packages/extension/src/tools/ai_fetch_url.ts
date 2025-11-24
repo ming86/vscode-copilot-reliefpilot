@@ -9,7 +9,7 @@ import type {
 } from 'vscode';
 import * as vscode from 'vscode';
 import { LanguageModelTextPart, LanguageModelToolResult } from 'vscode';
-import { createSession } from '../utils/ai_fetch_sessions';
+import { createSession, getSession } from '../utils/ai_fetch_sessions';
 import { env } from '../utils/env';
 import { statusBarActivity } from '../utils/statusBar';
 
@@ -383,7 +383,18 @@ export class AiFetchUrlLanguageModelTool implements LanguageModelTool<AiFetchUrl
             // Use 95% of maxInputTokens and convert tokens→chars via heuristic (≈4 chars/token).
             const contentMaxLength = Math.max(1, Math.floor(sessionModelMaxInputTokens * APPROX_CHARS_PER_TOKEN * 0.95));
 
-            const session = createSession(uid, target.toString(), topic, sessionModelId, sessionModelMaxInputTokens);
+            // Reuse session created during prepareInvocation (status: pending) or create if missing.
+            let session = getSession(uid);
+            if (!session) {
+                session = createSession(uid, target.toString(), topic, sessionModelId, sessionModelMaxInputTokens);
+            } else {
+                // Update placeholder metadata captured earlier.
+                session.url = target.toString();
+                session.topic = topic;
+                session.modelId = sessionModelId;
+                session.modelMaxInputTokens = sessionModelMaxInputTokens;
+                session.status = 'running';
+            }
 
             const controller = new AbortController();
             const subscription = token.onCancellationRequested(() => controller.abort());
@@ -481,6 +492,12 @@ export class AiFetchUrlLanguageModelTool implements LanguageModelTool<AiFetchUrl
         // Generate UID and remember for invoke(); embed in command link
         const uid = randomUUID();
         this._pendingUids.push(uid);
+
+        // Early session creation (modelMaxInputTokens unknown yet -> 0 placeholder)
+        try {
+            createSession(uid, url, topic, modelId ?? '—', 0); // status="pending" set internally
+        } catch { /* swallow early creation errors */ }
+
         const cmdArgs = encodeURIComponent(JSON.stringify({ uid }));
         md.appendMarkdown(`[Show progress](command:reliefpilot.aiFetchUrl.showProgress?${cmdArgs})`);
 
