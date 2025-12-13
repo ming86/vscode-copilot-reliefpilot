@@ -3,7 +3,7 @@
   "displayName": "Relief Pilot",
   "description": "A VSCode extension for missing capabilities required by AI agents and enabling advanced control.",
   "publisher": "ivan-mezentsev",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "commonjs",
   "icon": "icon.png",
   "categories": [
@@ -82,7 +82,7 @@
         },
         "reliefpilot.AiFetchUrlPrompt": {
           "type": "string",
-          "default": "# System Prompt\n\n## Identity\n\nYou are an agent-to-agent assistant for data extraction after fetching documents.\n\n## Capabilities\n\n- Extraction of content from data on a given topic automatically to save the context window of the higher-level AI agent\n- Preservation of the original meaning and formatting of the text\n\n## Rules\n\n### General rules\n\n- It is EXTREMELY important that the text you process retains the original phrasing as much as possible - without adding comments, notes - do not add anything from yourself to the output/do not comment except for the exact phrase that content on the specified topic is not presented.\n- It is necessary to precisely preserve the visual formatting: indents, line breaks, etc., but it is necessary to get rid of possible artifacts from previous html2text conversion such as unnecessary line breaks, buttons, cuts or other html tags (if they are not part of the topic) and/or other useless formatting elements that only clutter the context window.\n- It is necessary to process all characters in the text, including invisible ones except for those specified in Conversion and extraction rules\n\n### Conversion and extraction rules\n\n- It is necessary to replace absolutely all characters in the processed text that cannot be entered simply from the keyboard with their analogues. Example:\n\t- Replace the typographic `’` with a regular single quote `'`\n\t- Replace the typographic `ー` with `-`\n- Delete images (links to them) if the topic explicitly does not state that they are needed\n- Delete empty lines that have no meaning\n\n## Main task\n\n- Be sure to pay attention to the provided source document URL: __AI_FETCH_URL_PROCESSED_URL__ - this should give you more understanding of the context of the topic\n- It is EXTREMELY important to extract only the data from the content that very accurately corresponds to the requested topic __AI_FETCH_URL_PROCESSED_TOPIC__\n- If the data presents a comparison of the topic with alternatives, it is also important to extract data on the alternative topics in order not to lose the essence of the comparison itself.\n",
+          "default": "# System Prompt\n\n## Identity\n\nYou are an agent-to-agent assistant for data extraction after fetching documents.\n\n## Capabilities\n\n- Extraction of content from data on a given topic automatically to save the context window of the higher-level AI agent\n- Preservation of the original meaning and formatting of the text\n\n## Rules\n\n### General rules\n\n- It is EXTREMELY important that the text you process retains the original phrasing as much as possible - without adding comments, notes - do not add anything from yourself to the output/do not comment except for the exact phrase that content on the specified topic is not presented.\n- It is necessary to precisely preserve the visual formatting: indents, line breaks, etc., but it is necessary to get rid of possible artifacts from previous html2text conversion such as unnecessary line breaks, buttons, cuts or other html tags (if they are not part of the topic) and/or other useless formatting elements that only clutter the context window.\n- It is necessary to process all characters in the text, including invisible ones except for those specified in Conversion and extraction rules\n\n### Conversion and extraction rules\n\n- It is necessary to replace absolutely all characters in the processed text that cannot be entered simply from the keyboard with their analogues. Example:\n\t- Replace the typographic `’` with a regular single quote `'`\n\t- Replace the typographic `ー` with `-`\n- Delete images (links to them) if the topic explicitly does not state that they are needed\n- Delete empty lines that have no meaning\n\n### GitHub URL classifier rule\n\nIf URL matches any of:\n- https://github.com/<owner>/<repo>/tree/<ref>/<path>\n- https://github.com/<owner>/<repo>/blob/<ref>/<path>\n- https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>\n- https://r.jina.ai/https://github.com/<owner>/<repo>/tree/<ref>/<path>\n- https://r.jina.ai/https://github.com/<owner>/<repo>/blob/<ref>/<path>\n\nThen do NOT extract.\n\nOutput only a tool routing hint:\nGITHUB_ROUTING_HINT: {\"preferred_tool\":\"github_get_directory_contents|github_get_file_contents\",\"owner\":\"...\",\"repo\":\"...\",\"ref\":\"...\",\"path\":\"...\"}\n\nStrictly no extra lines.\n\n## Main task\n\n- Be sure to pay attention to the provided source document URL: __AI_FETCH_URL_PROCESSED_URL__ - this should give you more understanding of the context of the topic\n- It is EXTREMELY important to extract only the data from the content that very accurately corresponds to the requested topic __AI_FETCH_URL_PROCESSED_TOPIC__\n- If the data presents a comparison of the topic with alternatives, it is also important to extract data on the alternative topics in order not to lose the essence of the comparison itself.\n",
           "editPresentation": "multilineText",
           "description": "System prompt used by the ai_fetch_url tool to extract topic-specific content."
         },
@@ -344,7 +344,9 @@
               "description": "Library name to search for and retrieve a Context7-compatible library ID."
             }
           },
-          "required": ["libraryName"]
+          "required": [
+            "libraryName"
+          ]
         }
       },
       {
@@ -370,7 +372,9 @@
               "description": "Maximum number of tokens of documentation to retrieve (default: 6000). Higher values provide more context but consume more tokens."
             }
           },
-          "required": ["context7CompatibleLibraryID"]
+          "required": [
+            "context7CompatibleLibraryID"
+          ]
         }
       },
       {
@@ -392,7 +396,9 @@
               "description": "Number of items per page (max 100)."
             }
           },
-          "required": ["query"]
+          "required": [
+            "query"
+          ]
         }
       },
       {
@@ -422,7 +428,44 @@
               "description": "The name of the commit/branch/tag."
             }
           },
-          "required": ["owner", "repo", "path"]
+          "required": [
+            "owner",
+            "repo",
+            "path"
+          ]
+        }
+      },
+      {
+        "name": "github_get_directory_contents",
+        "displayName": "GitHub: Get directory contents",
+        "modelDescription": "List directory contents from a GitHub repository via GitHub Contents API.",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "github_get_directory_contents",
+        "icon": "icon.png",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repository owner (organization or user)."
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repository name."
+            },
+            "path": {
+              "type": "string",
+              "description": "Path to the directory within the repository. Omit or pass empty for repository root."
+            },
+            "ref": {
+              "type": "string",
+              "description": "The name of the commit/branch/tag."
+            }
+          },
+          "required": [
+            "owner",
+            "repo"
+          ]
         }
       },
       {
@@ -472,7 +515,10 @@
               "description": "Page number (1-based)."
             }
           },
-          "required": ["owner", "repo"]
+          "required": [
+            "owner",
+            "repo"
+          ]
         }
       },
       {
@@ -510,7 +556,12 @@
               "description": "Page number (1-based)."
             }
           },
-          "required": ["method", "owner", "repo", "pull_number"]
+          "required": [
+            "method",
+            "owner",
+            "repo",
+            "pull_number"
+          ]
         }
       },
       {
@@ -532,7 +583,9 @@
               "description": "Number of items per page (max 100)."
             }
           },
-          "required": ["query"]
+          "required": [
+            "query"
+          ]
         }
       },
       {
@@ -558,7 +611,10 @@
               "description": "Number of items per page (max 100)."
             }
           },
-          "required": ["owner", "repo"]
+          "required": [
+            "owner",
+            "repo"
+          ]
         }
       },
       {
@@ -580,7 +636,10 @@
               "description": "Repository name."
             }
           },
-          "required": ["owner", "repo"]
+          "required": [
+            "owner",
+            "repo"
+          ]
         }
       },
       {
@@ -602,7 +661,9 @@
               "description": "Number of items per page (max 100)."
             }
           },
-          "required": ["query"]
+          "required": [
+            "query"
+          ]
         }
       },
       {
@@ -628,7 +689,10 @@
               "description": "Number of items per page (max 100)."
             }
           },
-          "required": ["owner", "repo"]
+          "required": [
+            "owner",
+            "repo"
+          ]
         }
       },
       {
@@ -654,7 +718,11 @@
               "description": "Issue number."
             }
           },
-          "required": ["owner", "repo", "issue_number"]
+          "required": [
+            "owner",
+            "repo",
+            "issue_number"
+          ]
         }
       },
       {
@@ -716,7 +784,9 @@
               "description": "Sorting method for search results. Options: 'relevance' (default) or 'date' (most recent first)."
             }
           },
-          "required": ["query"]
+          "required": [
+            "query"
+          ]
         }
       },
       {
@@ -747,7 +817,9 @@
               "maximum": 20
             }
           },
-          "required": ["query"]
+          "required": [
+            "query"
+          ]
         }
       },
       {
@@ -765,7 +837,9 @@
               "description": "The search query or prompt"
             }
           },
-          "required": ["query"]
+          "required": [
+            "query"
+          ]
         }
       }
     ]
